@@ -1,4 +1,4 @@
-//const db = require('./database_configuration/database_helper');
+const db = require("./database_configuration/database_helper");
 const Joi = require("joi");
 const express = require("express");
 const app = express();
@@ -54,9 +54,9 @@ app.post("/api/login/", (req, res) => {
     return;
   } else {
     var data = credentialsDataStructuring(req.body.userName, req.body.password);
-    credentials.push(data);
+    insertingCredentialsToDB(data.userName, data.password);
+    //credentials.push(data);
     res.send(data);
-    console.log("credentials: ", credentials.length);
   }
 });
 
@@ -101,6 +101,30 @@ function coursesDataStructuring(courseName) {
     name: courseName.name,
   };
   return course;
+}
+
+function insertingCredentialsToDB(email, password) {
+  console.log("EMAIL :", email);
+  console.log("password: ", password);
+  return new Promise(async () => {
+    var sql =
+      "SELECT COUNT (user_email AND user_password) AS count FROM user_table WHERE user_email=? AND user_password=?";
+    try {
+      var result = await db.query(sql, [email, password]);
+      console.log('result count ', result[0].count);
+      if (result[0].count <= 0) {
+        console.log("result")
+        var insertSql = "INSERT INTO user_table SET user_email=?,user_password=?";
+        var insertResult = await db.query(insertSql, [email, password]);
+        if(insertResult[0].affectedRows > 0) {
+          return 
+        }
+        console.log("Insert result :", insertResult);
+      }
+    } catch (err) {
+      console.log("err", err);
+    }
+  });
 }
 // dbTest();
 // function dbTest() {
