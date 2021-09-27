@@ -2,10 +2,14 @@ const db = require("./database_configuration/database_helper");
 const Joi = require("joi");
 const express = require("express");
 const app = express();
+const router = express.Router();
 
 const PORT = process.env.PORT || 5000;
 
+app.set('view engine', 'html');
+app.engine('html', require('ejs').renderFile);
 app.use(express.json());
+app.use(router);
 
 var courses = [
   {
@@ -24,31 +28,32 @@ var courses = [
 
 var credentials = [];
 
-app.get("/api/courses", (req, res) => {
+router.get("/api/courses", (req, res) => {
   res.send(courses);
 });
 
-app.get("/api/courses/:name", (req, res) => {
+router.get("/api/courses/:name", (req, res) => {
   var course = validationCourse(req.params);
 
   if (!course) {
-    res.status(404).send(`Could not find your course: ${req.params.name}`);
+    //res.status(404).send(`Could not find your course: ${req.params.name}`);
+    res.render('404.html');
     return;
   }
   res.send(course);
 });
 
-app.get("/api/login", (req, res) => {
-  res.send(credentials);
+router.get("/api/register", (req, res) => {
+  sendCredentialstoClient(req, res);
 });
 
-app.post("/api/courses", (req, res) => {
+router.post("/api/courses", (req, res) => {
   var course = coursesDataStructuring(req.body);
   courses.push(course);
   res.send(course);
 });
 
-app.post("/api/register/", (req, res) => {
+router.post("/api/register/", (req, res) => {
   const { error } = validationCredentials(req.body);
   if (error) {
     res.status(400).send(error.details[0].message);
@@ -61,7 +66,7 @@ app.post("/api/register/", (req, res) => {
   }
 });
 
-app.put("/api/courses/:name", (req, res) => {});
+router.put("/api/courses/:name", (req, res) => {});
 
 app.listen(PORT, () => {
   console.log(`Listening on PORT ${PORT}`);
@@ -130,6 +135,27 @@ function registerationCredentials(email, password) {
       console.log("err", err);
     }
   });
+}
+
+function sendCredentialstoClient(req, res) {
+  return new Promise(async(resolve, reject) => {
+    var sql = "SELECT COUNT (user_id) AS count FROM user_table";
+    var result = await db.query(sql);
+    console.log("result count ", result[0].count);
+    if(result[0].count) {
+      var number = result[0].count;
+      for(var i = 1; i <= number; i++) {
+        var sql = "SELECT * FROM user_table WHERE user_id=?";
+        var result = await db.query(sql,[i]);
+        var jsonParse = result[0];
+        credentials.push(jsonParse);
+        console.log('credentials ',credentials);
+        if(i == number) {
+          res.send(credentials);
+        }
+      }
+    }
+  })
 }
 // dbTest();
 // function dbTest() {
