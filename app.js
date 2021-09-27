@@ -6,6 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
+
 var courses = [
   {
     id: 1,
@@ -47,14 +48,14 @@ app.post("/api/courses", (req, res) => {
   res.send(course);
 });
 
-app.post("/api/login/", (req, res) => {
+app.post("/api/register/", (req, res) => {
   const { error } = validationCredentials(req.body);
   if (error) {
     res.status(400).send(error.details[0].message);
     return;
   } else {
     var data = credentialsDataStructuring(req.body.userName, req.body.password);
-    insertingCredentialsToDB(data.userName, data.password);
+    registerationCredentials(data.userName, data.password);
     //credentials.push(data);
     res.send(data);
   }
@@ -103,25 +104,29 @@ function coursesDataStructuring(courseName) {
   return course;
 }
 
-function insertingCredentialsToDB(email, password) {
+function registerationCredentials(email, password) {
   console.log("EMAIL :", email);
   console.log("password: ", password);
-  return new Promise(async () => {
+  return new Promise(async (resolve, reject) => {
     var sql =
       "SELECT COUNT (user_email AND user_password) AS count FROM user_table WHERE user_email=? AND user_password=?";
     try {
       var result = await db.query(sql, [email, password]);
       console.log('result count ', result[0].count);
       if (result[0].count <= 0) {
-        console.log("result")
         var insertSql = "INSERT INTO user_table SET user_email=?,user_password=?";
         var insertResult = await db.query(insertSql, [email, password]);
-        if(insertResult[0].affectedRows > 0) {
+        if(insertResult.affectedRows > 0) {
+            resolve(insertResult.affectedRows);
+            console.log("Success");
           return 
         }
         console.log("Insert result :", insertResult);
+      } else {
+        console.log("Same Email");
       }
     } catch (err) {
+      reject(err);
       console.log("err", err);
     }
   });
