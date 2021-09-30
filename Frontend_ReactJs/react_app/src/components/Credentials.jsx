@@ -14,13 +14,12 @@ class Credentials extends React.Component {
     }
    
     async postAjax() {
-       axois.post('http://localhost:8000/api/register', this.state)
-       .then(response => {
-           console.log("response postAjax : ", response);
-       })
-       .catch(error => {
-        console.log("Error in postAjax : " ,error);
-       });
+    try {
+        const response = await axois.post('http://localhost:8000/api/register', this.state);
+        console.log(response);
+    }catch(err) {
+        console.log("err in post ajax : ",err);
+    }
     }
 
     handleChange = e => {
